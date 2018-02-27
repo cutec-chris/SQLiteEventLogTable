@@ -44,6 +44,8 @@ implementation
 
 {$ifdef WINDOWS}
   {$I windows_implementation.inc}
+{$else}
+  {$I unix_implementation.inc}
 {$endif}
 
 end.

@@ -30,15 +30,19 @@
     <Description Value="
 "/>
     <Version Minor="1"/>
-    <Files Count="2">
+    <Files Count="3">
       <Item1>
         <Filename Value="usqlite3eventtables.pas"/>
         <UnitName Value="uSqlite3EventTables"/>
       </Item1>
       <Item2>
-        <Filename Value="windows_implementation.inc"/>
+        <Filename Value="unix_implementation.inc"/>
         <Type Value="Include"/>
       </Item2>
+      <Item3>
+        <Filename Value="windows_implementation.inc"/>
+        <Type Value="Include"/>
+      </Item3>
     </Files>
     <RequiredPkgs Count="3">
       <Item1>
