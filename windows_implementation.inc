@@ -41,6 +41,18 @@ begin
   Result := Structure;
 end;
 
+
+function GetWMIObject(const objectName: String): IDispatch; //create the Wmi instance
+var
+  chEaten: ^Cardinal;
+  BindCtx: IBindCtx;
+  Moniker: IMoniker;
+begin
+  OleCheck(CreateBindCtx(0, bindCtx));
+  OleCheck(MkParseDisplayName(BindCtx, StringToOleStr(objectName), chEaten, Moniker));
+  OleCheck(Moniker.BindToObject(BindCtx, nil, IDispatch, Result));
+end;
+
 { TEventCursor }
 
 function TEventCursor.Search(Prepared: TSQLVirtualTablePrepared): Boolean;
@@ -50,40 +62,50 @@ var
   tmp: PUTF8Char;
 begin
   Result := True;
-  FSWbemLocator := CreateOleObject('WbemScripting.SWbemLocator');
-  FWMIService   := FSWbemLocator.ConnectServer('localhost', 'root\CIMV2', '', '');
-  FWbemObjectSet:= FWMIService.ExecQuery('SELECT Category,ComputerName,EventCode,Message,RecordNumber FROM Win32_NTLogEvent  Where Logfile="System"','WQL',wbemFlagForwardOnly);
-  oEnum         := IUnknown(FWbemObjectSet._NewEnum) as IEnumVariant;
-  for i := 0 to Prepared.WhereCount-1 do
-    begin
-    end;
+  try
+//    FSWbemLocator := CreateOleObject('WbemScripting.SWbemLocator');
+    FWMIService := GetWMIObject('winmgmts:\\localhost\root\CIMV2');
+    //FWMIService   := FSWbemLocator.ConnectServer('localhost', 'root\CIMV2', '', '');
+    for i := 0 to Prepared.WhereCount-1 do
+      begin
+      end;
+    FWbemObjectSet:= FWMIService.ExecQuery('SELECT Category,ComputerName,EventCode,Message,RecordNumber FROM Win32_NTLogEvent  Where Logfile="System"','WQL',wbemFlagForwardOnly);
+    oEnum         := IUnknown(FWbemObjectSet._NewEnum) as IEnumVariant;
+    FEof := oEnum.Next(1, FWbemObject, @iValue) <> 0;
+  except
+    Result := False;
+  end;
 end;
 
 function TEventCursor.Column(Index: Integer; var Res: TSQLVar): Boolean;
 begin
-  Res.VType:=ftNull;
-  case Index of
-  //-1:Res := Fsr.Time;
-  0:begin
-      Res.VType:=ftUTF8;
-      Res.VText:= PUTF8Char(String(FWbemObject.Category));
+  Result := False;
+  try
+    Res.VType:=ftNull;
+    case Index of
+    //-1:Res := Fsr.Time;
+    0:begin
+        Res.VType:=ftUTF8;
+        Res.VText:= PUTF8Char(String(FWbemObject.Category));
+      end;
+    1:begin
+        Res.VType:=ftUTF8;
+        Res.VText:=PUTF8Char(String(FWbemObject.ComputerName));
+      end;
+    2:begin
+        Res.VType:=ftInt64;
+        Res.VInt64:= Integer(FWbemObject.EventCode);
+      end;
+    3:begin
+        Res.VType:=ftUTF8;
+        Res.VText:=PUTF8Char(String(FWbemObject.Message));
+      end;
+    4:begin
+        Res.VType:=ftInt64;
+        Res.VInt64:=Integer(FWbemObject.RecordNumber); //mtime
+      end;
     end;
-  1:begin
-      Res.VType:=ftUTF8;
-      Res.VText:=PUTF8Char(String(FWbemObject.ComputerName));
-    end;
-  2:begin
-      Res.VType:=ftInt64;
-      Res.VInt64:= Integer(FWbemObject.EventCode);
-    end;
-  3:begin
-      Res.VType:=ftUTF8;
-      Res.VText:=PUTF8Char(String(FWbemObject.Message));
-    end;
-  4:begin
-      Res.VType:=ftInt64;
-      Res.VInt64:=Integer(FWbemObject.RecordNumber); //mtime
-    end;
+  except
   end;
   FWbemObject:=Unassigned;
   Result := True;
