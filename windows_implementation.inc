@@ -71,7 +71,7 @@ begin
       end;
     FWbemObjectSet:= FWMIService.ExecQuery('SELECT Category,ComputerName,EventCode,Message,RecordNumber FROM Win32_NTLogEvent  Where Logfile="System"','WQL',wbemFlagForwardOnly);
     oEnum         := IUnknown(FWbemObjectSet._NewEnum) as IEnumVariant;
-    FEof := oEnum.Next(1, FWbemObject, @iValue) <> 0;
+    FEof := oEnum.Next(1, FWbemObject, {$IF FPC_FULLVERSION<=20604}@iValue{$ELSE}iValue{$ENDIF}) <> 0;
   except
     Result := False;
   end;
@@ -113,7 +113,7 @@ end;
 
 function TEventCursor.Next: Boolean;
 begin
-  FEof := oEnum.Next(1, FWbemObject, @iValue) <> 0;
+  FEof := oEnum.Next(1, FWbemObject, {$IF FPC_FULLVERSION<=20604}@iValue{$ELSE}iValue{$ENDIF}) <> 0;
   Result := True;
 end;
 
